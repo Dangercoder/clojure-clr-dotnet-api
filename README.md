@@ -1,3 +1,5 @@
+# clojure-clr-dotnet-api
+Example of using clojure-clr+dotnet. 
 
 ## Setup
 * Install dotnet 6.
