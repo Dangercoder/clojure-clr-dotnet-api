@@ -23,3 +23,7 @@
 
 (load-all-assemblies-in-directory assembly-directory-microsoft-netcore-app)
 (load-all-assemblies-in-directory assembly-directory-microsoft-asp-netcore-app)
+
+(defn start-socket-repl 
+  ([] (start-socket-repl 7650))
+  ([port] (clojure.core.server/start-server {:name "test" :port port :accept 'clojure.core.server/repl})))
