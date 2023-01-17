@@ -1,5 +1,5 @@
 (ns user)
-(println "Loading user.")
+(println "Loading user.clj")
 
 (defn try-load-file [file-path]
   (try
@@ -12,6 +12,14 @@
                          (filter (fn [file-name] (clojure.string/includes? file-name ".dll"))))]
     (try-load-file file-path)))
 
-;; LOAD .NET, use your path.
-(load-all-assemblies-in-directory "/usr/share/dotnet/shared/Microsoft.AspNetCore.App/6.0.13")
-(load-all-assemblies-in-directory "/usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.13")
+
+(def assembly-directory-microsoft-netcore-app (-> (int 32)
+                                                  (.GetType)
+                                                  .Assembly
+                                                  .-Location
+                                                  System.IO.Path/GetDirectoryName))
+
+(def assembly-directory-microsoft-asp-netcore-app (clojure.string/replace assembly-directory-microsoft-netcore-app #"Microsoft.NETCore.App" "Microsoft.AspNetCore.App"))
+
+(load-all-assemblies-in-directory assembly-directory-microsoft-netcore-app)
+(load-all-assemblies-in-directory assembly-directory-microsoft-asp-netcore-app)
