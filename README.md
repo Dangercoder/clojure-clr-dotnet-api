@@ -2,7 +2,7 @@
 Example of using clojure-clr+dotnet. 
 
 ## Setup
-* Install dotnet 6.
+* Install .NET 6 or 7 (tested with .NET 6)
 
 * Install [dotnet-script](https://github.com/dotnet-script/dotnet-script) as a tool: `dotnet tool install -g dotnet-script`
 
