@@ -11,7 +11,7 @@
                          (filter (fn [file-name] (clojure.string/includes? file-name ".dll"))))]
     (try-load-file file-path)))
 
-;; LOAD .NET
+;; LOAD .NET, use your path.
 (load-all-assemblies-in-directory "/usr/share/dotnet/shared/Microsoft.AspNetCore.App/6.0.13")
 (load-all-assemblies-in-directory "/usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.13")
 
@@ -46,37 +46,27 @@
 ;; TODO
 (defn -main [& args])
 
-
-(defn init [])
-
 (comment
-
-  (def config (get-dev-config))
 
   (def app (-> (WebApplication/CreateBuilder)
                (.Build)
                configure-app))
+  ;;; >> Microsoft.Scripting.ArgumentTypeException: "expected IEndpointRouteBuilder, got WebApplication"
 
   (-> (WebApplication/CreateBuilder)
       (.Build)
       class
       (.GetInterfaces))
 
-  (-> app
-      class
-      (.GetInterfaces))
-
-  (instance? Microsoft.AspNetCore.Builder.IApplicationBuilder app)
-
-  (configure-app app)
-
-
-
   (def state (atom app))
+
+
+  (def config (get-dev-config))
 
   (future
     (run-app app config))
-  )
+  
+)
 
 
 
