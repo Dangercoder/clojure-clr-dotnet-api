@@ -14,7 +14,7 @@ From the terminal:
 
 ## Issues
 Despite loading every assembly manually in:  
-`"/usr/share/dotnet/shared/Microsoft.AspNetCore.App/6.0.13"`
+`"/usr/share/dotnet/shared/Microsoft.AspNetCore.App/6.0.13"`  
 `"/usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.13"`  
 
  [Microsoft.AspNetCore.Builder WebApplication](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/webapplication?view=aspnetcore-7.0) is not available when using the [Clojure.main dotnet tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool)
