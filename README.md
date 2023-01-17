@@ -7,10 +7,11 @@
 
 ## Start & Connect to a repl
 From the terminal:
-1. dotnet-script main.csx
-2. Start a socket repl: `(clojure.core.server/start-server {:name "test" :port 7650 :accept 'clojure.core.server/repl})`
-3. Install vs-code and [the clover plugin](https://marketplace.visualstudio.com/items?itemName=mauricioszabo.clover) and connect to the socket repl.
-4. Eval code via the repl 💠
+1. cd src
+2. dotnet-script main.csx
+3. Start a socket repl: `(clojure.core.server/start-server {:name "test" :port 7650 :accept 'clojure.core.server/repl})`
+4. Install vs-code and [the clover plugin](https://marketplace.visualstudio.com/items?itemName=mauricioszabo.clover) and connect to the socket repl.
+5. Eval code via the repl 💠
 
 ## Issues
 Despite loading every assembly manually in:  
