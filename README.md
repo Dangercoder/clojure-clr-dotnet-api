@@ -25,3 +25,9 @@ This made me package everything into a dotnet-script. Not pretty but works for n
 ## Structure
 [src/clj_api](./src/clj_api) contains the clojure application code.   
 [src/main.csx](./src/main.csx) is for loading dependencies and Clojure.
+
+## TODO for fun
+* Add routes that accepts json, returns json
+* Add routes that stores data in a database using e.g. Dapper.
+* Use .NET Middleware on routes
+* CI - build a Docker image from a Dockerfile. 
