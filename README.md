@@ -1,36 +1,41 @@
 # clojure-clr-dotnet-api
-Example of using clojure-clr+dotnet. 
+Example of using clojure-clr and dotnet 7 and integrant for building a web api with metrics, db-access, structured-logging, swagger, health-checks.
+
 
 ## Setup
-* Install .NET 6 or 7 (tested with .NET 6)
-
-* Install [dotnet-script](https://github.com/dotnet-script/dotnet-script) as a tool: `dotnet tool install -g dotnet-script`
+* Install .NET 6 or 7 - .NET 7 contains huge performance improvements.
+* Install [Clojure.Main as a dotnet tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool) as a tool: `dotnet tool install --global --version 1.12.0-alpha3 Clojure.Main`
 
 
 ## Start & Connect to a repl
 From the terminal:
-1. cd src
-2. dotnet-script main.csx
-3. Start a socket repl: `(start-socket-repl)` - starts a socket repl on `localhost:7650`
+1. start a clojure repl:  `Clojure.Main`
+3. Start a socket repl server: `(clojure.core.server/start-server {:name "test" :port 7650 :accept 'clojure.core.server/repl})`
 4. Install vs-code and [the clover plugin](https://marketplace.visualstudio.com/items?itemName=mauricioszabo.clover) and connect to the socket repl.
 5. Eval code via the repl 💠
 
-## Issues
-Despite loading every assembly manually in:  
-`"/usr/share/dotnet/shared/Microsoft.AspNetCore.App/6.0.13"`  
-`"/usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.13"`  
+## Run the application
+`Clojure.Main -m clj-api.main`
 
- [Microsoft.AspNetCore.Builder WebApplication](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/webapplication?view=aspnetcore-7.0) is not available when using the [Clojure.main dotnet tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool)
+## Routes
+POST - `/json` - accepts a json map: `{"name":"danger"}`  
+GET - `/` -     returns json  
+GET - `/health` -     returns health check status
 
-This made me package everything into a dotnet-script. Not pretty but works for now.
+## Features
+* System composition using integrant [X]
+* Routing [X]
+* Health Checks [X]
+* Add routes that accepts json, returns json [X]
+* Structured Logging with Serilog []
+* Metrics                         []
+* Swagger Docs                    []
+* Request Validation              []
+* Add routes that stores data in a database []
+* CI - build a Docker image from a Dockerfile []
 
 
-## Structure
-[src/clj_api](./src/clj_api) contains the clojure application code.   
-[src/main.csx](./src/main.csx) is for loading dependencies and Clojure.
-
-## TODO for fun
-* Add routes that accepts json, returns json
-* Add routes that stores data in a database using e.g. Dapper.
-* Use .NET Middleware on routes
-* CI - build a Docker image from a Dockerfile. 
+## Problems
+- Package management = copy paste dll's atm.
+- interop with Tasks using clojure.core.async only works on Windows which means we can't go non-blocking.
+- Can't produce a standalone DLL 
