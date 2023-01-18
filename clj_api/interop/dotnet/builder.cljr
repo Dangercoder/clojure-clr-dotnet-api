@@ -1,0 +1,24 @@
+(ns clj-api.interop.dotnet.builder
+  (:import [Microsoft.AspNetCore.Builder EndpointRouteBuilderExtensions HealthCheckEndpointRouteBuilderExtensions]
+           [Microsoft.AspNetCore.Http HttpResponseJsonExtensions]
+           [System.Threading.Tasks Task]
+           [Microsoft.AspNetCore.Server.Kestrel.Core KestrelServerOptions]
+           [Microsoft.AspNetCore.Hosting WebHostBuilderKestrelExtensions]
+           [System.Threading CancellationTokenSource]
+           [Microsoft.AspNetCore.Builder WebApplication WebApplicationBuilder EndpointRouteBuilderExtensions HealthCheckEndpointRouteBuilderExtensions]
+           [Microsoft.AspNetCore.Http RequestDelegate HttpResponseWritingExtensions HttpContext]
+           [Microsoft.Extensions.DependencyInjection HealthCheckServiceCollectionExtensions]))
+
+(defn add-health-checks [builder]
+  (-> builder
+      .-Services
+      (HealthCheckServiceCollectionExtensions/AddHealthChecks))
+  builder)
+
+  #_{:clj-kondo/ignore [:unresolved-symbol]}
+(defn allow-synchronous-io [builder]
+  (-> builder
+      .-WebHost
+      (WebHostBuilderKestrelExtensions/ConfigureKestrel (gen-delegate |System.Action`1[Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions]| [options]
+                                                                      (set! (.-AllowSynchronousIO options) true))))
+  builder)
