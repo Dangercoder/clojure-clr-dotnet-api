@@ -23,16 +23,16 @@ GET - `/` -     returns json
 GET - `/health` -     returns health check status
 
 ## Features
-* System composition using integrant [X]
-* Routing [X]
-* Health Checks [X]
-* Add routes that accepts json, returns json [X]
-* Structured Logging with Serilog []
-* Metrics                         []
-* Swagger Docs                    []
-* Request Validation              []
-* Add routes that stores data in a database []
-* CI - build a Docker image from a Dockerfile []
+* System composition using integrant :white_check_mark:
+* Routing :white_check_mark:
+* Health Checks :white_check_mark:
+* Add routes that accepts json, returns json :white_check_mark:
+* Structured Logging with Serilog 
+* Metrics                         
+* Swagger Docs                   
+* Request Validation             
+* Add routes that stores data in a database 
+* CI - build a Docker image from a Dockerfile
 
 
 ## Problems
