@@ -33,7 +33,10 @@
 
 (defn create-app []
   (-> (WebApplication/CreateBuilder)
-      builder/add-health-checks
+      (builder/add-health-checks [{:health-check/name "Am I ok?"
+                                   :health-check/fn (fn [] {:health-check/status :healthy})}
+                                  {:health-check/name "Yes I am"
+                                   :health-check/fn (fn [] {:health-check/status :healthy})}])
       builder/allow-synchronous-io
       .Build
       routes/configure-routes))
