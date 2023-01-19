@@ -18,6 +18,7 @@
 
 (load-all-assemblies-in-directory assembly-directory-microsoft-netcore-app)
 (load-all-assemblies-in-directory assembly-directory-microsoft-asp-netcore-app)
+(assembly-load-from "/home/dangercoder/repos/clojure-clr-dotnet-api/references/Dapper.dll")
 
 (ns clj-api.main
   (:require
@@ -33,9 +34,7 @@
 
 (defn create-app []
   (-> (WebApplication/CreateBuilder)
-      (builder/add-health-checks [{:health-check/name "Am I ok?"
-                                   :health-check/fn (fn [] {:health-check/status :healthy})}
-                                  {:health-check/name "Yes I am"
+      (builder/add-health-checks [{:health-check/name "Database Health Check"
                                    :health-check/fn (fn [] {:health-check/status :healthy})}])
       builder/allow-synchronous-io
       .Build
