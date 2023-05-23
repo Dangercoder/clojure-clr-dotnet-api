@@ -1,4 +1,5 @@
 (ns clj-api.interop.dotnet.http
+  (:require [clojure.core.async :as a])
   (:import [Microsoft.AspNetCore.Http HttpRequestRewindExtensions]
            [Microsoft.AspNetCore.Http
             HttpContext
@@ -12,6 +13,11 @@
            [System.Threading CancellationTokenSource]
            [System.Threading.Tasks Task]))
 
+
+(defn ->cancellation-token []
+  (-> (CancellationTokenSource.)
+      (.Token)))
+
 (def json-document-options (new JsonDocumentOptions))
 
 (def json-serializer-options (new JsonSerializerOptions))
@@ -19,18 +25,26 @@
 ;; TODO convert any clojure keywords to strings. 
 (defn format-body [v])
 
-(defn stream->json-object [stream]
-  (System.Text.Json.Nodes.JsonNode/Parse stream nil json-document-options))
+;; TODO consider using clojure.data.json, however it should be significantly slower.
+(defn ->json-object [s]
+  (System.Text.Json.Nodes.JsonNode/Parse ^String s nil json-document-options))
 
 (defn ^JsonNode get-request-body-json-object [^HttpRequest request]
   (when (= "POST" (.Method request))
-  (let [_ (HttpRequestRewindExtensions/EnableBuffering request)
-        body (-> request .Body)
-        _ (set! (.Position body) 0)]
+    (let [_ (HttpRequestRewindExtensions/EnableBuffering request)
+          body (-> request .Body)
+          _ (set! (.Position body) 0)
+          chan (a/chan)]
 ;; TODO this is blocking and why we need to configure Kestrel to allow sync io.
-    (-> (new StreamReader body)
-        (.ReadToEnd)
-        (stream->json-object)))))
+   (-> (new StreamReader body)
+       (.ReadToEndAsync)
+       (.ContinueWith
+        (sys-action [|System.Threading.Tasks.Task`1[System.String]|] [^Task task]
+                    (a/go
+                      (let [result (.Result task)]
+                        (a/put! chan result)
+                        nil))) (->cancellation-token)))
+(->json-object (a/<!! chan)))))
 
 (defn add-request-json-body [context]
   (let [http-context ^HttpContext (:http/context context)
@@ -59,3 +73,37 @@
                                                        :response/body
                                                        ->json-string)]
                                           (HttpResponseWritingExtensions/WriteAsync raw-response body token))))))
+
+
+(comment
+  (require '[clojure.core.async :as a])
+
+  (def chan (a/chan 1))
+
+
+  (-> (Task/Run 
+        (sys-func [System.String] [] 
+                  "bro,"))
+      (.ContinueWith 
+      (sys-action [|System.Threading.Tasks.Task`1[System.String]|] [^Task task]
+                (println (.Result task)))
+       (->cancellation-token)))
+  
+       #_(gen-delegate |System.Action`1[System.Threading.Tasks.Task`1[System.String]]|[the-string]
+                                   (a/go
+                                     (println "Start")
+                                     (println the-string)
+                                     (a/<! (a/timeout 5000))  ; Wait for 500ms
+                                     (println "End"))
+                       )
+
+  (def chan (a/chan 1))
+
+  (a/>!! chan "Hello")
+  
+
+  (println (a/<!! chan))
+
+  :rcf)
+
+
