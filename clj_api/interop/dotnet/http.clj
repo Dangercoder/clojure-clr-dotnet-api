@@ -40,6 +40,8 @@
         (assoc :request/raw-json-object json-object))))
 
 (defn ->json-string [v]
+  (def v v)
+  v
   (JsonSerializer/Serialize v (type v) json-serializer-options))
 
 #_{:clj-kondo/ignore [:unresolved-symbol]}
@@ -50,6 +52,7 @@
                                               handler-response (-> {:http/context http-context}
                                                                    add-request-json-body
                                                                    f)
+                                              _ (def handler-response handler-response)
                                               raw-response (.Response http-context)
                                               cancellation-token-source (new CancellationTokenSource)
                                               token (.Token cancellation-token-source)

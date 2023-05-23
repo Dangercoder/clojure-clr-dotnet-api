@@ -8,13 +8,18 @@
 (s/def ::create-user-request (s/keys :req-un [::username
                                               ::email]))
 
+(defn handle-default-resp [ctx]
+  (def ctx ctx)
+  ctx
+                               (assoc ctx
+                                      :response/status (int 200)
+                                      :response/body {"powered-by" "clojure-clr"}))
+
 (defn configure-routes [app]
   (-> app
       (map-get "/" {:middeware []
                     :handler (fn [ctx]
-                               (assoc ctx
-                                      :response/status 200
-                                      :response/body {"powered-by" "clojure-clr"}))})
+                               (handle-default-resp ctx))})
       (map-post "/user" {:middleware []
                          :handler (fn [context]
                                     (let [person-name (-> context
