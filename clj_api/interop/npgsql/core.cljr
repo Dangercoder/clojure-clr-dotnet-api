@@ -8,8 +8,6 @@
   (-> (CancellationTokenSource.)
       (.Token)))
 
-System.Threading.Tasks.Task`1[Npgsql.NpgsqlConnection]
-
 (defn ->connection
   "Opens a new `NpgsqlConnection`
    returns the connection on a `core.async channel`"
