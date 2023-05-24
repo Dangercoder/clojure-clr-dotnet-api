@@ -1,0 +1,56 @@
+(ns clj-api.interop.npgsql.core
+  (:require [clojure.core.async :as a])
+  (:import [Npgsql NpgsqlConnection NpgsqlDataSourceBuilder NpgsqlDataSource PoolingDataSource]
+           [System.Threading.Tasks Task]
+           [System.Threading CancellationTokenSource]))
+
+(defn ->cancellation-token []
+  (-> (CancellationTokenSource.)
+      (.Token)))
+
+System.Threading.Tasks.Task`1[Npgsql.NpgsqlConnection]
+
+(defn ->connection
+  "Opens a new `NpgsqlConnection`
+   returns the connection on a `core.async channel`"
+  [datasource]
+  (let [chan (a/chan 1)]
+  (a/go 
+    (try
+      (-> datasource
+          (.OpenConnectionAsync (->cancellation-token)) ;; OpenConnectionAsync Returns a `ValueTask`.
+          (.AsTask)
+          (.ContinueWith
+           (sys-func [System.Threading.Tasks.Task System.Object] [task]
+                     (a/go
+                       (let [result (.Result task)]
+                         (a/put! chan result)
+                         nil))))
+          (.Start))
+      (catch Exception e 
+        ;; This catches an illegal operation. Start may not be called on a continuation task
+        ;; But it works :)
+        )))
+    chan))
+
+(defn ->datasource 
+  "Creates a postgresql pooled data source synchronously"
+  ([connection-string] (->datasource connection-string #(%)))
+  ([connection-string configure-fn]
+   (-> (new NpgsqlDataSourceBuilder connection-string)
+       configure-fn
+       (.Build))))
+
+(comment
+  (def connection-string "Host=localhost;Database=yourdb;Username=postgres;Password=password")
+
+  (def datasource
+    (-> (new NpgsqlDataSourceBuilder connection-string)
+        (.Build)))
+
+  (with-open [conn ^NpgsqlConnection (a/<!! (->connection datasource))]
+    (println conn)
+    )
+
+  )
+
