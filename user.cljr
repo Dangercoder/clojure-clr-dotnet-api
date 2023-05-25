@@ -21,7 +21,7 @@
 (load-all-assemblies-in-directory assembly-directory-microsoft-netcore-app)
 (load-all-assemblies-in-directory assembly-directory-microsoft-asp-netcore-app)
 
-(def home-path (System.Environment/GetEnvironmentVariable "HOME"))
+(def home-path (System.Environment/GetFolderPath System.Environment+SpecialFolder/UserProfile))
 
 (defn print-all-assemblies
   []
