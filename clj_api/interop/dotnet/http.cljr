@@ -1,5 +1,6 @@
 (ns clj-api.interop.dotnet.http
-  (:require [clojure.core.async :as a])
+  (:require [clojure.core.async :as a]
+            [clojure.data.json :as json])
   (:import [Microsoft.AspNetCore.Http HttpRequestRewindExtensions]
            [Microsoft.AspNetCore.Http
             HttpContext
@@ -12,7 +13,6 @@
            [System.Threading CancellationTokenSource]
            [System.Threading CancellationTokenSource]
            [System.Threading.Tasks Task]))
-
 
 (defn ->cancellation-token []
   (-> (CancellationTokenSource.)
@@ -29,29 +29,33 @@
 (defn ->json-object [s]
   (System.Text.Json.Nodes.JsonNode/Parse ^String s nil json-document-options))
 
-(defn ^JsonNode get-request-body-json-object [^HttpRequest request]
-  (when (= "POST" (.Method request))
+(defn get-request-body-json-object! [^HttpRequest request]
+  (if (= "POST" (.Method request))
     (let [_ (HttpRequestRewindExtensions/EnableBuffering request)
           body (-> request .Body)
           _ (set! (.Position body) 0)
           chan (a/chan)]
 ;; TODO this is blocking and why we need to configure Kestrel to allow sync io.
-   (-> (new StreamReader body)
-       (.ReadToEndAsync)
-       (.ContinueWith
-        (sys-action [|System.Threading.Tasks.Task`1[System.String]|] [^Task task]
-                    (a/go
-                      (let [result (.Result task)]
-                        (a/put! chan result)
-                        nil))) (->cancellation-token)))
-(->json-object (a/<!! chan)))))
+      (-> (new StreamReader body)
+          (.ReadToEndAsync)
+          (.ContinueWith
+           (sys-action [|System.Threading.Tasks.Task`1[System.String]|] [^Task task]
+                       (a/go
+                         (let [result (.Result task)]
+                           (a/put! chan result)
+                           nil))) (->cancellation-token)))
+      chan
+      #_(->json-object (a/<!! chan))
+      )
+    (a/go "{}")))
 
-(defn add-request-json-body [context]
+(defn get-request-json-body! [context]
   (let [http-context ^HttpContext (:http/context context)
-        request (.Request http-context)
-        json-object (get-request-body-json-object request)]
-    (-> context
-        (assoc :request/raw-json-object json-object))))
+        request (.Request http-context)]
+    (get-request-body-json-object! request)))
+
+ #_   (-> context
+        (assoc :request/raw-json-object json-object))
 
 (defn ->json-string [v]
   (JsonSerializer/Serialize v (type v) json-serializer-options))
@@ -60,19 +64,26 @@
 (defn request-handler [f]
   (gen-delegate RequestDelegate [^HttpContext http-context]
                 (Task/Run (gen-delegate System.Action []
-                                        (let [raw-request (.Request http-context)
-                                              handler-response (-> {:http/context http-context}
-                                                                   add-request-json-body
-                                                                   f)
-                                              raw-response (.Response http-context)
-                                              cancellation-token-source (new CancellationTokenSource)
-                                              token (.Token cancellation-token-source)
-                                              _ (set! (.-StatusCode raw-response) ^Int32 (-> handler-response :response/status))
-                                              _ (set! (.-ContentType raw-response) "application/json")
-                                              body (-> handler-response
-                                                       :response/body
-                                                       ->json-string)]
-                                          (HttpResponseWritingExtensions/WriteAsync raw-response body token))))))
+                                   (a/<!! (a/go
+                                            (try
+                                              (let [raw-request (.Request http-context)
+                                                    ;json-object (->json-object (a/<! (get-request-body-json-object! raw-request)))
+                                                    body (json/read-str (a/<! (get-request-body-json-object! raw-request))
+                                                                        :key-fn keyword)
+                                                    context {:http/context http-context
+                                                             :request/body body}
+                                                    handler-response (a/<! (f context))
+                                                    raw-response (.Response http-context)
+                                                    cancellation-token-source (new CancellationTokenSource)
+                                                    token (.Token cancellation-token-source)
+                                                    _ (set! (.-StatusCode raw-response) ^System.Int64 (-> handler-response :response/status))
+                                                    _ (set! (.-ContentType raw-response) "application/json")
+                                                    body (-> handler-response
+                                                             :response/body
+                                                             json/write-str)]
+                                                (HttpResponseWritingExtensions/WriteAsync raw-response body token))
+                                              (catch Exception e
+                                                (println e)))))))))
 
 
 (comment
@@ -96,6 +107,8 @@
                                      (a/<! (a/timeout 5000))  ; Wait for 500ms
                                      (println "End"))
                        )
+  
+  (type 200)
 
   (def chan (a/chan 1))
 

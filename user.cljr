@@ -39,7 +39,8 @@
                "clojure.core.async/1.6.674/lib/netstandard2.1/clojure.core.async.dll"
             ;   "clojure.tools.nrepl/0.1.0-alpha1/lib/netstandard2.1/clojure.tools.nrepl.dll"
                "npgsql/7.0.4/lib/net7.0/Npgsql.dll"
-               "system.data.sqlclient/4.8.5/lib/netstandard2.0/System.Data.SqlClient.dll"])
+               "system.data.sqlclient/4.8.5/lib/netstandard2.0/System.Data.SqlClient.dll"
+               "clojure.data.json/2.4.1/lib/netstandard2.1/clojure.data.json.dll"])
 
 (def assemblies (doall (map (fn [package]
                               #_{:clj-kondo/ignore [:unresolved-symbol]}
