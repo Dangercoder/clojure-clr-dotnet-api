@@ -1,14 +1,16 @@
-(ns clj-api.interop.npgsql.core
+(ns npgsql.core
+  "Wrapper functions around https://www.npgsql.org/index.html"
   (:require [clojure.core.async :as a])
-  (:import [Npgsql NpgsqlConnection NpgsqlDataSourceBuilder NpgsqlDataSource PoolingDataSource]
-           [System.Threading.Tasks Task]
+  (:import [Npgsql NpgsqlDataSourceBuilder NpgsqlCommand]
            [System.Threading CancellationTokenSource]))
+
+(set! *warn-on-reflection* true)
 
 (defn ->cancellation-token []
   (-> (CancellationTokenSource.)
       (.Token)))
 
-(defn ->connection
+(defn connection!
   "Opens a new `NpgsqlConnection`
    returns the connection on a `core.async channel`"
   [datasource]
@@ -19,36 +21,94 @@
           (.OpenConnectionAsync (->cancellation-token)) ;; OpenConnectionAsync Returns a `ValueTask`.
           (.AsTask)
           (.ContinueWith
-           (sys-func [System.Threading.Tasks.Task System.Object] [task]
+           ;(sys-func [System.Threading.Tasks.Task System.Object] [task]
+           ;|System.Action`2[[System.Threading.Tasks.Task`1[Npgsql.NpgsqlConnection]],System.Object]|
+           (gen-delegate |System.Action`1[[System.Threading.Tasks.Task`1[Npgsql.NpgsqlConnection]]]| [task]
                      (a/go
                        (let [result (.Result task)]
-                         (a/put! chan result)
-                         nil))))
+                         (a/put! chan result)))))
           (.Start))
       (catch Exception e 
         ;; This catches an illegal operation. Start may not be called on a continuation task
-        ;; But it works :)
         )))
     chan))
 
-(defn ->datasource 
+(defn datasource!!
   "Creates a postgresql pooled data source synchronously"
-  ([connection-string] (->datasource connection-string #(%)))
+  ([connection-string] (datasource!! connection-string (fn [x] x)))
   ([connection-string configure-fn]
    (-> (new NpgsqlDataSourceBuilder connection-string)
        configure-fn
        (.Build))))
 
+(defn ->result-row [^Npgsql.NpgsqlDataReader reader]
+  (reduce
+   (fn [acc indx]
+     (assoc acc (keyword ^System.String (.GetName reader indx))
+            (.GetValue reader indx)))
+   {} (range (.FieldCount reader))))
+
+(defn execute!!
+  "Executes queries synchronously"
+  [conn queries & opts] 
+  ;; TODO use batching if multiple queries.
+    (let [reader ^Npgsql.NpgsqlDataReader (->> conn
+                                               (new NpgsqlCommand (first queries))
+                                               (.ExecuteReader))]
+      (loop [result []]
+        (if (.Read reader)
+          (recur (conj result (->result-row reader)))
+          result))))
+
+(defn execute!
+  "Executes queries async"
+  [conn queries & opts]
+  (a/go
+    (let [reader-chan (a/chan)]
+      (-> ^System.Data.SqlClient.SqlCommand (new NpgsqlCommand (first queries) conn)
+          (.ExecuteReaderAsync (->cancellation-token))
+          (.ContinueWith
+           (gen-delegate |System.Action`1[[System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]]]| [^|System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]| reader-task]
+                         (a/go
+                           (try
+                             (let [reader (.Result reader-task)]
+                               (a/put! reader-chan (a/<! (a/go-loop [result-set []]
+                                                           (let [reader-ch (a/chan)
+                                                                 _ (-> reader
+                                                                       (.ReadAsync)
+                                                                       ^System.Threading.Tasks.Task (.ContinueWith
+                                                                                                     (gen-delegate |System.Action`1[[System.Threading.Tasks.Task`1[System.Boolean]]]| [row-read]
+                                                                                                                   (a/go
+                                                                                                                     (try
+                                                                                                                       (a/put! reader-ch (.Result row-read))
+                                                                                                                       (catch Exception e
+                                                                                                                         (println e)
+                                                                                                                         (a/put! reader-ch false)))))))
+                                                                 next-item? (a/<! reader-ch)]
+                                                             (if next-item?
+                                                               (recur (conj result-set (->result-row reader)))
+                                                               result-set))))))
+                             (catch Exception _e
+                               :failed))))))
+      (a/<! reader-chan))))
+
 (comment
-  (def connection-string "Host=localhost;Database=yourdb;Username=postgres;Password=password")
+  (def connection-string "Host=localhost;Database=mydb;Username=postgres;Password=password")
 
-  (def datasource
-    (-> (new NpgsqlDataSourceBuilder connection-string)
-        (.Build)))
+  (def datasource (datasource!! connection-string))
 
-  (with-open [conn ^NpgsqlConnection (a/<!! (->connection datasource))]
-    (println conn)
-    )
+ ; --- sync
+  (dotimes [_ 100]
+    (time
+    (with-open [conn (a/<!! (connection! datasource))]
+      (execute!! conn ["SELECT * from mydb.user"])
+      nil)))
 
-  )
+
+ ; --- async
+    (a/go 
+     (time (with-open [conn (a/<! (connection! datasource))]
+             (println (a/<! (execute! conn ["SELECT * FROM mydb.user"]))))))
+
+  :rcf)
 

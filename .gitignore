@@ -4,3 +4,4 @@ obj
 .idea
 bin
 .clj-kondo
+.calva

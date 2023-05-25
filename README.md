@@ -27,16 +27,16 @@ GET - `/health` -     returns health check status
 * System composition using integrant :white_check_mark:
 * Routing :white_check_mark:
 * Health Checks :white_check_mark:
+* Db Access :white_check_mark:
 * Add routes that accepts json, returns json :white_check_mark:
+* Background jobs 
 * Structured Logging with Serilog 
 * Metrics                         
 * Swagger Docs                   
 * Request Validation             
-* Add routes that stores data in a database 
 * CI - build a Docker image from a Dockerfile
 
 
 ## Problems
-- Package management = copy paste dll's atm.
-- interop with Tasks using clojure.core.async only works on Windows which means we can't go non-blocking.
+- Package management = have to load DLL's ourselves, check `user.cljr`
 - Can't produce a standalone DLL 
