@@ -8,7 +8,7 @@
    [System.Threading CancellationTokenSource]
    [Microsoft.AspNetCore.Builder WebApplication]))
 
-(def config {:component/web-app {::app/url "http://localhost:8080"}})
+(def config {:component/web-app {::app/url "http://*:5000"}})
 
 (defn create-app []
   (-> (WebApplication/CreateBuilder)

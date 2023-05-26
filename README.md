@@ -1,9 +1,12 @@
 # clojure-clr-dotnet-api
 Example of using clojure-clr and dotnet 7 and integrant for building a web api with metrics, db-access, structured-logging, swagger, health-checks.
 
+## Quickstart (Dockerfile)
+1. build the image:  `docker build -t clojure-clr-api .`
+2. run the image: `docker run -p 5000:5000 docker.io/library/clojure-clr-api`
 
-## Setup
-* Install .NET 6 or 7 - .NET 7 contains huge performance improvements.
+## Development Setup
+* Install .NET 6 or 7 - .NET 7 
 * Install [Clojure.Main as a dotnet tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool) as a tool: `dotnet tool install --global --version 1.12.0-alpha3 Clojure.Main`
 * Run `dotnet restore` to install the nuget packages specified in `CljApi.csproj`
 
