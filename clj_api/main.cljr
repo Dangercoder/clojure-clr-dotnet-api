@@ -28,8 +28,10 @@
     (.StopAsync (::app/app opts) token)))
 
 (defn -main [& args]
-;; TODO add proper shutdown hooks
-  (integrant/init config))
+  (-> (integrant/init config)
+      :component/web-app
+      ::app/f
+      deref))
 
 (comment
   ;; start
