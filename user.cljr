@@ -18,32 +18,68 @@
 
 (def assembly-directory-microsoft-asp-netcore-app (clojure.string/replace assembly-directory-microsoft-netcore-app #"Microsoft.NETCore.App" "Microsoft.AspNetCore.App"))
 
+(defn get-packages-path [json-object]
+  (-> (.get_Item json-object "project")
+      (.get_Item "restore")
+      (.get_Item "packagesPath")
+      (.ToString)))
+
+(defn get-original-target-frameworks [json-object]
+  (map #(.ToString %) (-> (.get_Item json-object "project")
+                          (.get_Item "restore")
+                          (.get_Item "originalTargetFrameworks"))))
+
+(defn dict-to-map [^System.Collections.IDictionary dict]
+  (into {} (for [[k v] dict] [k v])))
+
+(defn ->package-opts-runtime [x]
+               (map (fn [[package-name package-opts]]
+                      [package-name (dict-to-map (.get_Item package-opts "runtime"))])
+                    x))
+
+(defn get-target-packages [json-object target-framework]
+          (-> json-object
+               (.get_Item "targets")
+               (.get_Item ^String target-framework)
+               dict-to-map
+              ->package-opts-runtime))
+
 (load-all-assemblies-in-directory assembly-directory-microsoft-netcore-app)
 (load-all-assemblies-in-directory assembly-directory-microsoft-asp-netcore-app)
 
-(def home-path (System.Environment/GetFolderPath System.Environment+SpecialFolder/UserProfile))
+(import '[System.Text.Json JsonDocument JsonElement]
+        '[System.IO StreamReader]
+        '[System.Text.Json JsonDocumentOptions JsonSerializer JsonSerializerOptions])
 
-(defn print-all-assemblies
+(def json-document-options (new JsonDocumentOptions))
+
+(def json-serializer-options (new JsonSerializerOptions))
+
+(defn ->json-object [s]
+  (System.Text.Json.Nodes.JsonNode/Parse ^String s nil json-document-options))
+
+(defn parse-project-assets [project-assets-path]
+  (with-open [stream-reader (StreamReader. project-assets-path)]
+    (let [json-string (.ReadToEnd stream-reader)
+          json-object (->json-object json-string)]
+      json-object)))
+
+(defn load-nuget-packages!
+  "Loads all nuget packages and their dependencies."
   []
-  (doseq [assembly (seq (.GetAssemblies (System.AppDomain/CurrentDomain)))]
-    (println (.FullName assembly))))
+  (let [project-assets-json-object  (parse-project-assets "obj/project.assets.json")
+        packages-path (get-packages-path project-assets-json-object)
+        original-target-frameworks (get-original-target-frameworks project-assets-json-object)]
+    (doseq [original-target-framework original-target-frameworks]
+      (println original-target-framework)
+      (doseq [[package-name package-opts] (get-target-packages project-assets-json-object original-target-framework)]
+         (println package-name)
+        (let [dll-path (str packages-path (clojure.string/lower-case  package-name) "/" (first (first package-opts)))]
+          (when (clojure.string/includes? dll-path ".dll")
+            (try
+              (println (assembly-load-from dll-path))
+              (catch Exception e
+              ;; swallow.
+                ))))))))
 
-;; packages. They've all been added via `dotnet install` and then `dotnet restore` to download the packages.
-(def packages ["clojure.data.priority-map/1.1.0/lib/netstandard2.1/clojure.data.priority-map.dll"
-               "clojure.core.cache/1.0.226/lib/netstandard2.1/clojure.core.cache.dll"
-               "clojure.core.memoize/1.0.257/lib/netstandard2.1/clojure.core.memoize.dll"
-               "clr.tools.reader/1.3.7/lib/netstandard2.1/clojure.tools.reader.dll"
-               "clojure.tools.reader/1.3.7/lib/netstandard2.1/clojure.tools.reader.dll"
-               "clojure.tools.analyzer/1.1.1/lib/netstandard2.1/clojure.tools.analyzer.dll"
-               "clojure.tools.analyzer.clr/1.2.4/lib/netstandard2.1/clojure.tools.analyzer.clr.dll"
-               "clojure.core.async/1.6.674/lib/netstandard2.1/clojure.core.async.dll"
-            ;   "clojure.tools.nrepl/0.1.0-alpha1/lib/netstandard2.1/clojure.tools.nrepl.dll"
-               "npgsql/7.0.4/lib/net7.0/Npgsql.dll"
-               "system.data.sqlclient/4.8.5/lib/netstandard2.0/System.Data.SqlClient.dll"
-               "clojure.data.json/2.4.1/lib/netstandard2.1/clojure.data.json.dll"])
-
-(def assemblies (doall (map (fn [package]
-                              #_{:clj-kondo/ignore [:unresolved-symbol]}
-                              (assembly-load-from (str home-path "/.nuget/packages/" package))) packages)))
-(doseq [assembly assemblies]
-  (println "Loaded:" assembly))
+(load-nuget-packages!)
