@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  postgres1337:
+    container_name: postgres1337
+    image: postgres
+    environment:
+      POSTGRES_DB: dotnet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - ./postgres/data:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  clojure-clr-api:
+    container_name: clojure-clr-api
+    image: docker.io/library/clojure-clr-api
+    environment:
+      DB_CONNECTION_STRING: Host=postgres1337;Database=dotnet;Username=postgres;Password=password
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres1337
+    restart: unless-stopped

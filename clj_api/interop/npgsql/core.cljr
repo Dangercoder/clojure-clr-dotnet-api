@@ -1,10 +1,10 @@
-(ns npgsql.core
+(ns clj-api.interop.npgsql.core
   "Wrapper functions around https://www.npgsql.org/index.html"
   (:require [clojure.core.async :as a])
   (:import [Npgsql NpgsqlDataSourceBuilder NpgsqlCommand]
            [System.Threading CancellationTokenSource]))
 
-(set! *warn-on-reflection* true)
+;(set! *warn-on-reflection* true)
 
 (defn ->cancellation-token []
   (-> (CancellationTokenSource.)
@@ -65,7 +65,7 @@
   [conn queries & opts]
   (a/go
     (let [reader-chan (a/chan)]
-      (-> ^System.Data.SqlClient.SqlCommand (new NpgsqlCommand (first queries) conn)
+      (-> (new NpgsqlCommand (first queries) conn)
           (.ExecuteReaderAsync (->cancellation-token))
           (.ContinueWith
            (gen-delegate |System.Action`1[[System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]]]| [^|System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]| reader-task]

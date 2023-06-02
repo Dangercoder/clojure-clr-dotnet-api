@@ -3,33 +3,47 @@
    [clj-api.integrant.core :as integrant]
    [clj-api.routes :as routes]
    [clj-api.interop.dotnet.app :as app]
+   [clj-api.interop.npgsql.core :as npgsql]
+   [clj-api.db.setup :as db-setup]
    [clj-api.interop.dotnet.builder :as builder])
   (:import
    [System.Threading CancellationTokenSource]
    [Microsoft.AspNetCore.Builder WebApplication]))
 
-(def config {:component/web-app {::app/url "http://*:5000"}})
+(defn get-connection-string []
+  (or (System.Environment/GetEnvironmentVariable "DB_CONNECTION_STRING")
+      "Host=localhost;Database=dotnet;Username=postgres;Password=password"))
 
-(defn create-app []
+(def config {:component/app {::app/url "http://*:5000"
+                                 :component/datasource (integrant/ref :component/datasource)}
+             :component/datasource {:connection-string (get-connection-string)}})
+
+(defn create-app [db]
   (-> (WebApplication/CreateBuilder)
       builder/add-health-checks
       .Build
-      routes/configure-routes))
+      (routes/configure-routes db)))
 
-(defmethod integrant/init-key :component/web-app [_ opts]
-  (println "Starting web app component")
-  (-> (create-app)
+(defmethod integrant/init-key :component/datasource [_ opts]
+  (let [datasource (npgsql/datasource!! (:connection-string opts))]
+    (db-setup/init!! datasource)
+    datasource))
+
+(defmethod integrant/halt-key! :component/datasource [_ ds]
+  (.Dispose ds))
+
+(defmethod integrant/init-key :component/app [_ opts]
+  (-> (create-app (:component/datasource opts))
       (app/run opts)))
 
-(defmethod integrant/halt-key! :component/web-app [_ opts]
-  (println "Stopping web app component")
+(defmethod integrant/halt-key! :component/app [_ opts]
   (let [token (-> (new CancellationTokenSource)
                   (.Token))]
     (.StopAsync (::app/app opts) token)))
 
 (defn -main [& args]
   (-> (integrant/init config)
-      :component/web-app
+      :component/app
       ::app/f
       deref))
 

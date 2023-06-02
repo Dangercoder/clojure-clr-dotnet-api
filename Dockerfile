@@ -10,10 +10,10 @@ COPY CljApi.csproj .
 COPY clj_api/ clj_api
 COPY user.cljr .
 
-RUN dotnet tool install --global --version 1.12.0-alpha7 Clojure.Main
+RUN dotnet tool install --global potion
 RUN dotnet restore
 
 # Add .NET global tools to PATH
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-CMD ["Clojure.Main", "-m", "clj-api.main"]
+CMD ["potion", "-m", "clj-api.main"]

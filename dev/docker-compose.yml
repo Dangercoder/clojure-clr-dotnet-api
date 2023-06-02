@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  postgres1337:
+    container_name: postgres1337
+    image: postgres
+    environment:
+      POSTGRES_DB: dotnet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - ./postgres/data:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped

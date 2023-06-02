@@ -1,0 +1,35 @@
+(ns clj-api.db.setup
+  (:require [clj-api.interop.npgsql.core :as npgsql]
+            [clojure.core.async :as a]))
+
+(def create-schema-query
+  "CREATE SCHEMA IF NOT EXISTS dotnet;")
+
+(def create-table-query
+  "CREATE TABLE IF NOT EXISTS dotnet.user (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    date_of_birth DATE
+  );")
+
+(def insert-into-table-query
+  "INSERT INTO dotnet.user (first_name, last_name, email, date_of_birth)
+  VALUES ('John', 'Doe', 'john.doe@example.com', '1985-07-20');")
+
+(defn create-users []
+  (map #(format "INSERT INTO dotnet.user (first_name, last_name, email, date_of_birth)
+  VALUES ('John', 'Doe', 'john%s.doe@example.com', '1985-07-20');" %) (range 100)))
+
+
+(defn init!!
+  "Initialises the database synchronously. "
+  [datasource]
+  (doseq [query (concat [create-schema-query
+                         create-table-query]
+                        (create-users))]
+    ;; npgsql only allows one command per connection.
+    ;; TODO support batching.
+  (with-open [conn (a/<!! (npgsql/connection! datasource))]
+    (npgsql/execute!! conn [query]))))
