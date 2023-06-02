@@ -1,13 +1,15 @@
 (ns clj-api.routes
   (:require [clj-api.interop.dotnet.app :refer [map-get map-post map-health-checks]]
             [clj-api.interop.npgsql.core :as npgsql]
+            [clj-api.honey.sql :as sql]
             [clojure.core.async :as a]))
 
 (defn handle-get-users [context datasource]
   (a/go
     (with-open [conn (a/<! (npgsql/connection! datasource))]
       (assoc context
-             :response/body (a/<! (npgsql/execute! conn ["SELECT * from dotnet.user LIMIT 50;"]))
+             :response/body (a/<! (npgsql/execute! conn (sql/format {:select [:*]
+                                                                     :from [:dotnet.user]})))
              :response/status 200))))
 
 (defn handle-default-route [context]

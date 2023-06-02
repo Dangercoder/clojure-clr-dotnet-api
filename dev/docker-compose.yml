@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   postgres1337:
-    container_name: postgres1337
+    container_name: postgres123
     image: postgres
     environment:
       POSTGRES_DB: dotnet
