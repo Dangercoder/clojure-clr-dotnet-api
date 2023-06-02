@@ -23,6 +23,7 @@ From the terminal:
 ## Routes
 GET - `/`          
 GET - `/users` -     returns all users
+POST - `/user` -     create a user
 GET - `/healthz` -   returns health check status
 
 ## Features

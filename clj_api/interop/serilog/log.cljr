@@ -14,13 +14,11 @@
                    nil)
                 (.CreateLogger)))
 
-  (defn info [s]
-    (.Information logger s))
+  (defmacro info [s & args]
+  `(.Information logger ~s ~@args))
 
-  (defn warn [s]
-    (.Warning logger s))
+  (defmacro warn [s & args]
+  `(.Warning logger ~s ~@args))
 
-  (defn error [s]
-    (.Error logger s))
-
-  
+  (defmacro error [s & args]
+  `(.Error logger ~s ~@args))

@@ -14,6 +14,27 @@
                                                                      :from [:dotnet.user]})))
              :response/status 200))))
 
+;; TODO
+(defn create-user [conn user]
+  (let [query {:insert-into [:dotnet.user]
+               :columns [:first_name :last_name :email :date_of_birth]
+               :values  [(:first_name user)
+                         (:last_name user)
+                         (:email user)
+                         (DateTime/Parse (:date_of_birth user))]}]
+    ;;(npgsql/execute! conn (sql/format query))
+    (a/go 1)))
+
+(defn handle-create-user [context datasource]
+  (a/go
+    (with-open [conn (a/<! (npgsql/connection! datasource))]
+      (let [data (:request/body context)
+            _insertUser (a/<! (create-user conn data))]
+        (log/info "Created user: {@User}" data)
+        (assoc context
+               :response/body {}
+               :response/status 200)))))
+
 (defn handle-default-route [context]
   (a/go
     (assoc context
@@ -25,4 +46,5 @@
   (-> app
       (map-get "/" handle-default-route)
       (map-get "/users" (fn [context] (handle-get-users context datasource)))
+      (map-post "/user" (fn [context] (handle-create-user context datasource)))
       (map-health-checks "/healthz")))
