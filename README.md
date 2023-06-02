@@ -31,8 +31,8 @@ GET - `/healthz` -   returns health check status
 * Routing :white_check_mark:
 * Db Access :white_check_mark:
 * Add routes that accepts json, returns json :white_check_mark:
-* Health Checks :white_check_mark 
-* Structured Logging with Serilog :white_check_mark
+* Health Checks :white_check_mark:
+* Structured Logging with Serilog :white_check_mark:
 * Background jobs 
 * Metrics                         
 * Swagger Docs                   
