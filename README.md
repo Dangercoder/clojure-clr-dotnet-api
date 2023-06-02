@@ -7,7 +7,7 @@ Example of using clojure-clr and dotnet 7 minimal api 100% async - interoping wi
 
 ## Development Setup
 * Install .NET 7 and Docker 
-* Install [potion - a clojure clr tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool) as a tool: `dotnet tool install --global potion`
+* Install [potion - a clojure clr tool](https://github.com/clojure/clojure-clr/wiki/Getting-started#installing-clojureclr-as-a-dotnet-tool) as a tool: `dotnet tool install --global potion` -- must be version 1.0.5+
 * Run `dotnet restore` to install the nuget packages specified in `CljApi.csproj`
 * docker-compose up using the docker-compose in /dev
 
@@ -23,16 +23,16 @@ From the terminal:
 ## Routes
 GET - `/`          
 GET - `/users` -     returns all users
-GET - `/health` -     returns health check status
+GET - `/healthz` -   returns health check status
 
 ## Features
 * System composition using integrant :white_check_mark:
 * Routing :white_check_mark:
 * Db Access :white_check_mark:
 * Add routes that accepts json, returns json :white_check_mark:
+* Health Checks :white_check_mark 
+* Structured Logging with Serilog :white_check_mark
 * Background jobs 
-* Health Checks 
-* Structured Logging with Serilog 
 * Metrics                         
 * Swagger Docs                   
 * Request Validation             

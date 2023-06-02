@@ -1,14 +1,12 @@
 (ns clj-api.main
-  (:require
-   [clj-api.integrant.core :as integrant]
-   [clj-api.routes :as routes]
-   [clj-api.interop.dotnet.app :as app]
-   [clj-api.interop.npgsql.core :as npgsql]
-   [clj-api.db.setup :as db-setup]
-   [clj-api.interop.dotnet.builder :as builder])
-  (:import
-   [System.Threading CancellationTokenSource]
-   [Microsoft.AspNetCore.Builder WebApplication]))
+  (:require [clj-api.db.setup :as db-setup]
+            [clj-api.integrant.core :as integrant]
+            [clj-api.interop.dotnet.app :as app]
+            [clj-api.interop.dotnet.builder :as builder]
+            [clj-api.interop.npgsql.core :as npgsql]
+            [clj-api.routes :as routes])
+  (:import [Microsoft.AspNetCore.Builder WebApplication]
+           [System.Threading CancellationTokenSource]))
 
 (defn get-connection-string []
   (or (System.Environment/GetEnvironmentVariable "DB_CONNECTION_STRING")

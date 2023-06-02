@@ -2,11 +2,13 @@
   (:require [clj-api.interop.dotnet.app :refer [map-get map-post map-health-checks]]
             [clj-api.interop.npgsql.core :as npgsql]
             [clj-api.honey.sql :as sql]
+            [clj-api.logging :as log]
             [clojure.core.async :as a]))
 
 (defn handle-get-users [context datasource]
   (a/go
     (with-open [conn (a/<! (npgsql/connection! datasource))]
+      (log/info "Fetching users")
       (assoc context
              :response/body (a/<! (npgsql/execute! conn (sql/format {:select [:*]
                                                                      :from [:dotnet.user]})))

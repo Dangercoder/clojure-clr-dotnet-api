@@ -1,0 +1,26 @@
+(ns clj-api.interop.serilog.log
+  (:import [Serilog ConsoleLoggerConfigurationExtensions LoggerConfiguration]))
+
+  (def logger (-> (LoggerConfiguration.)
+                  (.WriteTo)
+                  (ConsoleLoggerConfigurationExtensions/Console
+                   Serilog.Events.LevelAlias/Minimum
+                   "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+                   nil
+                   nil
+                   nil
+                   nil
+                   false
+                   nil)
+                (.CreateLogger)))
+
+  (defn info [s]
+    (.Information logger s))
+
+  (defn warn [s]
+    (.Warning logger s))
+
+  (defn error [s]
+    (.Error logger s))
+
+  

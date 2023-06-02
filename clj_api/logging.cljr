@@ -1,0 +1,11 @@
+(ns clj-api.logging
+  (:require [clj-api.interop.serilog.log :as serilog]))
+
+(defn info [s]
+  (serilog/info s))
+
+(defn warn [s]
+  (serilog/warn s))
+
+(defn error [s]
+  (serilog/error s))
