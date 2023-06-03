@@ -1,6 +1,7 @@
 (ns clj-api.main
   (:require [clj-api.db.setup :as db-setup]
             [clj-api.integrant.core :as integrant]
+            [clj-api.logging :as log]
             [clj-api.interop.dotnet.app :as app]
             [clj-api.interop.dotnet.builder :as builder]
             [clj-api.interop.npgsql.core :as npgsql]
@@ -19,7 +20,9 @@
 (defn create-app [db]
   (-> (WebApplication/CreateBuilder)
       builder/add-health-checks
-      .Build
+      log/add-serilog
+      .Build 
+      log/register
       (routes/configure-routes db)))
 
 (defmethod integrant/init-key :component/datasource [_ opts]
@@ -50,5 +53,4 @@
   (def system (integrant/init config))
 
   ;; stop
-  (integrant/halt! system)
-  )
+  (integrant/halt! system))

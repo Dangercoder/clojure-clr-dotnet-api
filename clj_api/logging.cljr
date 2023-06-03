@@ -1,11 +1,34 @@
 (ns clj-api.logging
-  (:require [clj-api.interop.serilog.log :as serilog]))
+  (:require [clj-api.interop.serilog.log :as serilog])
+  (:import [Microsoft.AspNetCore.Builder WebApplication]
+           [Serilog SerilogLoggingBuilderExtensions]
+           [Microsoft.Extensions.Logging LoggerExtensions]))
 
-(defn info [s & args]
-  (serilog/info s args))
+(defonce logger* (atom nil))
 
-(defn warn [s & args]
-  (serilog/warn s args))
+(defn add-serilog [builder]
+  (SerilogLoggingBuilderExtensions/AddSerilog
+   (.Logging builder)
+   clj-api.interop.serilog.log/console-logger
+   false)
+  builder)
 
-(defn error [s & args]
-  (serilog/error s args))
+(defn register [^WebApplication app]
+  (reset! logger* (.Logger app))
+  app)
+
+(defn require-logger []
+  (when (nil? @logger*)
+    (throw (ex-info "Logger impl is nil. Use the register! function to initialize the logger." {}))))
+
+(defn info [message & args]
+  (require-logger)
+  (LoggerExtensions/LogInformation ^Microsoft.Extensions.Logging.ILogger @logger* message (into-array Object args)))
+
+(defn warn [message & args]
+  (require-logger)
+  (LoggerExtensions/LogError ^Microsoft.Extensions.Logging.ILogger @logger* message (into-array Object args)))
+
+(defn error [message & args]
+  (require-logger)
+  (LoggerExtensions/LogError ^Microsoft.Extensions.Logging.ILogger @logger* message (into-array Object args)))
