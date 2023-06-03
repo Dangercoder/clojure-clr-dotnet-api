@@ -1,19 +1,22 @@
 (ns clj-api.interop.serilog.log
-  (:import [Serilog ConsoleLoggerConfigurationExtensions LoggerConfiguration]))
+  (:import [Serilog ConsoleLoggerConfigurationExtensions LoggerConfiguration]
+           [Serilog.Formatting.Compact RenderedCompactJsonFormatter]))
+  
 
   (def console-logger (-> (LoggerConfiguration.)
                           (.WriteTo)
                           (ConsoleLoggerConfigurationExtensions/Console
+                           (RenderedCompactJsonFormatter. nil)
                            Serilog.Events.LevelAlias/Minimum
-                           "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
                            nil
                            nil
-                           nil
-                           nil
-                           false
                            nil)
                           (.CreateLogger)))
 
+  ; System.ArgumentException: Object of type 'Serilog.Formatting.Compact.CompactJsonFormatter'
+  ;;cannot be converted to type 'System.IFormatProvider'. clj-api.interop.serilog.log 
+  ;; WHAT?   public class CompactJsonFormatter: ITextFormatter
+  ;; 
   ;; (defmacro info [s & args]
   ;; `(.Information logger ~s ~@args))
 

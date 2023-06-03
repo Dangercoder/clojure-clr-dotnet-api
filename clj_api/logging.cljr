@@ -32,3 +32,9 @@
 (defn error [message & args]
   (require-logger)
   (LoggerExtensions/LogError ^Microsoft.Extensions.Logging.ILogger @logger* message (into-array Object args)))
+
+
+(comment 
+  (info "Hai {@order}")
+  
+  )
